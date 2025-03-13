@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx", // Single, correct JSX setting for React
+    "target": "ES2020", // Modern JS target, compatible with Vite
+    "module": "ESNext", // ES modules for Vite and Tauri
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ], // Libraries for browser and modern JS
+    "moduleResolution": "node", // Vite’s preferred resolution mode
+    // "allowImportingTsExtensions": true, // Allow .ts/.tsx imports without extensions
+    "resolveJsonModule": true, // Support JSON imports
+    "isolatedModules": true, // Required for Vite’s fast dev mode
+    "noEmit": true, // Vite handles compilation, not tsc
+    "esModuleInterop": true, // Better module interop
+    "skipLibCheck": true, // Speed up compilation
+    "strict": true, // Enforce strict type checking
+    "noUnusedLocals": true, // Catch unused variables
+    "noUnusedParameters": true, // Catch unused parameters
+    "noFallthroughCasesInSwitch": true, // Prevent switch fallthrough bugs
+    "useDefineForClassFields": true // Modern class field behavior
+  },
+  "include": [
+    "src/**/*"
+  ] // Include all files in src
+}

@@ -1,0 +1,18 @@
+/* src/styles/tailwind.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional global styles */
+body {
+  @apply bg-app-background text-gray-800;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  @apply w-2 bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-app-primary rounded-full;
+}
