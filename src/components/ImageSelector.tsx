@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { motion } from 'framer-motion';
-import { getVersion, getTauriVersion } from '@tauri-apps/api/app';
 import { platform } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 
 interface ImageSelectorProps {
-  onImageSelected: (imagePath: string) => void;
+  onImageSelected: (imagePath: string, imageData?: string) => void;
   selectedImage: string | null;
 }
 
@@ -18,6 +17,7 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Check if running on mobile
   useEffect(() => {
@@ -33,47 +33,62 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
     checkPlatform();
   }, []);
 
+  // Set preview URL when selected image changes
+  useEffect(() => {
+    if (selectedImage && !selectedImage.startsWith('content://')) {
+      setPreviewUrl(convertFileSrc(selectedImage));
+    }
+  }, [selectedImage]);
+
   const handleSelectImage = async () => {
     try {
       setIsLoading(true);
 
-      // On Android, you might need to request permissions first if you're using a plugin for that
-      // For example, with tauri-plugin-mobile-permissions:
-      if (isMobileDevice) {
-        try {
-          // This is a placeholder - you would use the actual permission API if implemented
-          await invoke('request_storage_permission');
-        } catch (error) {
-          console.log('Permission API might not be available, continuing anyway:', error);
+      // Open file dialog 
+      const selected = await open({
+        multiple: false,
+        filters: [{
+          name: 'Images',
+          extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp']
+        }]
+      });
+
+      if (selected) {
+        let imagePath: string;
+
+        if (Array.isArray(selected) && selected.length > 0) {
+          imagePath = selected[0];
+        } else if (typeof selected === 'string') {
+          imagePath = selected;
+        } else {
+          throw new Error('Invalid selection');
         }
-      }
 
-      // Open file dialog with retry logic for mobile devices
-      let selected = null;
-      let attempts = 0;
-      const maxAttempts = 3;
+        // Check if it's a content URI (Android)
+        if (imagePath.startsWith('content://')) {
+          try {
+            console.log('Processing content URI:', imagePath);
 
-      while (!selected && attempts < maxAttempts) {
-        try {
-          selected = await open({
-            multiple: false,
-            filters: [{
-              name: 'Images',
-              extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp']
-            }]
-          });
-          attempts++;
-        } catch (error) {
-          console.log(`Attempt ${attempts} failed:`, error);
-          // Small delay before retry
-          await new Promise(resolve => setTimeout(resolve, 500));
+            // Use our custom command to read content URI
+            const base64Data = await invoke<string>('read_content_uri', { uri: imagePath });
+
+            // Create data URL (assuming JPEG for simplicity)
+            const dataUrl = `data:image/jpeg;base64,${base64Data}`;
+
+            // Set preview
+            setPreviewUrl(dataUrl);
+
+            // Pass both path and data URL to parent
+            onImageSelected(imagePath, dataUrl);
+          } catch (error) {
+            console.error('Error reading content URI:', error);
+            alert(`Failed to read image: ${error}`);
+          }
+        } else {
+          // Regular file path
+          setPreviewUrl(convertFileSrc(imagePath));
+          onImageSelected(imagePath);
         }
-      }
-
-      if (selected && typeof selected === 'string') {
-        onImageSelected(selected);
-      } else if (Array.isArray(selected) && selected.length > 0) {
-        onImageSelected(selected[0]);
       }
     } catch (error) {
       console.error('Error selecting image:', error);
@@ -98,12 +113,8 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      // In a real Tauri app, we'd use the Tauri API to handle this file
-      // This is a simplified example
       console.log('File dropped:', file.name);
-      // In a real app, we'd convert this to a file path
-      // For now, this is just a placeholder
-      // onImageSelected(file.path);
+      // Not implemented for this example
     }
   };
 
@@ -116,10 +127,10 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {selectedImage ? (
+        {previewUrl ? (
           <div className="w-full h-full flex items-center justify-center">
             <img
-              src={convertFileSrc(selectedImage)}
+              src={previewUrl}
               alt="Selected"
               className="max-h-full max-w-full object-contain rounded"
             />

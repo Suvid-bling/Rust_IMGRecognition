@@ -17,6 +17,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 # In Tauri v2, JNI support is included by default for Android builds
+tauri-plugin-fs = "2.0.0"
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"

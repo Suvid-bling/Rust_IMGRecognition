@@ -46,7 +46,7 @@ function App() {
   }, []);
 
 
-  const handleImageSelected = async (imagePath: string) => {
+  const handleImageSelected = async (imagePath: string, imageData?: string) => {
     if (!modelInitialized) {
       setErrorMessage('Model not initialized. Please wait and try again.');
       return;
@@ -57,9 +57,21 @@ function App() {
       setSelectedImage(imagePath);
       setResults([]);
 
-      const recognitionResults: RecognitionResult[] = await invoke('recognize_image', {
-        imagePath,
-      });
+      let recognitionResults: RecognitionResult[];
+
+      if (imageData && imagePath.startsWith('content://')) {
+        // For content URIs, use the image data
+        const base64Data = imageData.split(',')[1]; // Remove the "data:image/jpeg;base64," part
+
+        recognitionResults = await invoke('recognize_image_data', {
+          imageData: base64Data
+        });
+      } else {
+        // For regular file paths, use the path
+        recognitionResults = await invoke('recognize_image', {
+          imagePath,
+        });
+      }
 
       setResults(recognitionResults);
       setErrorMessage(null);

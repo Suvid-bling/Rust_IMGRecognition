@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use base64::{engine::general_purpose, Engine as _};
 use log::{error, info};
 use once_cell::sync::OnceCell;
 use std::fs::File;
@@ -6,12 +7,25 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
+use tauri::AppHandle;
 use thiserror::Error;
 
 // Tract imports
 use tract_onnx::prelude::*;
 
 static CLASS_LABELS: OnceCell<Vec<String>> = OnceCell::new();
+
+#[tauri::command]
+async fn get_content_uri_base64(uri: String, app_handle: AppHandle) -> Result<String, String> {
+    println!("DEBUG: Received content URI: {}", uri);
+
+    // Placeholder: We need to resolve the content URI to raw data
+    // For now, return an error to confirm the command is called
+    Err(format!(
+        "Content URI resolution not implemented yet for: {}",
+        uri
+    ))
+}
 
 #[derive(Error, Debug)]
 pub enum ModelError {
